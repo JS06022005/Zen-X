@@ -1,0 +1,178 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document storing basic account information",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User full name or display name",
+          "maxLength": 100
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Profile picture URL",
+          "maxLength": 1024
+        },
+        "phone": {
+          "type": "string",
+          "description": "Primary phone number",
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last profile update timestamp"
+        }
+      },
+      "required": ["userId", "email"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order placed through checkout",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique order ID",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "Auth UID of the purchaser",
+          "maxLength": 128
+        },
+        "items": {
+          "type": "array",
+          "description": "Purchased items with quantity and size"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Final paid amount in INR"
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Subtotal before coupon discount"
+        },
+        "discount": {
+          "type": "number",
+          "description": "Discount applied"
+        },
+        "deliveryAddress": {
+          "type": "object",
+          "description": "Shipping address details"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Selected payment method",
+          "enum": ["upi", "card", "netbanking", "cod"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Order fulfillment status",
+          "enum": ["confirmed", "processing", "shipped", "delivered", "cancelled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Order creation timestamp"
+        }
+      },
+      "required": ["id", "userId", "items", "totalAmount", "deliveryAddress", "paymentMethod", "status"]
+    },
+    "Wishlist": {
+      "title": "Wishlist",
+      "description": "User saved wishlist product IDs",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "maxLength": 128
+        },
+        "productIds": {
+          "type": "array",
+          "description": "List of favorite product IDs"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last wishlist modification"
+        }
+      },
+      "required": ["userId", "productIds"]
+    },
+    "Cart": {
+      "title": "Cart",
+      "description": "User persistent shopping cart",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "maxLength": 128
+        },
+        "items": {
+          "type": "array",
+          "description": "Cart items list"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last cart modification"
+        }
+      },
+      "required": ["userId", "items"]
+    },
+    "TestConnection": {
+      "title": "TestConnection",
+      "description": "Healthcheck ping document for initial connection verification",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Healthcheck status indicator",
+          "maxLength": 32
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile records indexed by auth UID"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders collection"
+    },
+    "/wishlists/{userId}": {
+      "schema": "Wishlist",
+      "description": "User wishlists indexed by user UID"
+    },
+    "/carts/{userId}": {
+      "schema": "Cart",
+      "description": "User active carts indexed by user UID"
+    },
+    "/test/{testId}": {
+      "schema": "TestConnection",
+      "description": "Connection test document"
+    }
+  }
+}

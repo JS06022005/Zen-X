@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Helper Primitives
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Entity Validators
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'email'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024))
+        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 20));
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['id', 'userId', 'items', 'totalAmount', 'deliveryAddress', 'paymentMethod', 'status'])
+        && data.id is string && data.id.size() <= 64
+        && data.userId is string && data.userId == request.auth.uid
+        && data.items is list && data.items.size() > 0 && data.items.size() <= 50
+        && data.totalAmount is number && data.totalAmount >= 0
+        && data.paymentMethod is string && data.paymentMethod in ['upi', 'card', 'netbanking', 'cod']
+        && data.status is string && data.status in ['confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
+        && data.deliveryAddress is map;
+    }
+
+    function isValidWishlist(data) {
+      return data.keys().hasAll(['userId', 'productIds'])
+        && data.userId is string && data.userId == request.auth.uid
+        && data.productIds is list && data.productIds.size() <= 100;
+    }
+
+    function isValidCart(data) {
+      return data.keys().hasAll(['userId', 'items'])
+        && data.userId is string && data.userId == request.auth.uid
+        && data.items is list && data.items.size() <= 100;
+    }
+
+    // Connection Healthcheck
+    match /test/{testId} {
+      allow get: if true;
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && incoming().userId == request.auth.uid
+        && isValidUser(incoming());
+      allow update: if isOwner(userId)
+        && isValidId(userId)
+        && incoming().userId == existing().userId
+        && isValidUser(incoming());
+      allow delete: if false;
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      allow get: if isSignedIn()
+        && isValidId(orderId)
+        && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && isValidId(orderId)
+        && incoming().userId == request.auth.uid
+        && incoming().createdAt == request.time
+        && isValidOrder(incoming());
+      allow update, delete: if false;
+    }
+
+    // User Wishlists
+    match /wishlists/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create, update: if isOwner(userId)
+        && isValidId(userId)
+        && incoming().userId == request.auth.uid
+        && isValidWishlist(incoming());
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // User Carts
+    match /carts/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create, update: if isOwner(userId)
+        && isValidId(userId)
+        && incoming().userId == request.auth.uid
+        && isValidCart(incoming());
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+  }
+}

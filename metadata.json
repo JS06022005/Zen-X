@@ -1,0 +1,6 @@
+{
+  "name": "ZEN X APPAREL - Minimalist Essentials",
+  "description": "Everyday modern minimalist streetwear essentials crafted with 100% Combed Cotton, calibrated cuts, and ultra-heavyweight knit architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
